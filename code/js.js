@@ -1,38 +1,27 @@
 import { readFileSync } from "fs";
-import pluralize from "pluralize";
-import n2w from "number-names";
 
 const randomArrKey = items => items[Math.floor(Math.random() * items.length)];
-const wordList = readFileSync(__dirname + "/../assets/words/nouns.txt", "utf-8")
-	.split("\n")
-	.filter(Boolean);
+const wordList = JSON.parse(
+	readFileSync(__dirname + "/../scrape/cache.json", "utf-8")
+);
 
-const buildUpFanta = $guys => {
-	const number = n2w(Math.round(999 * Math.random()));
-	const inverted = Math.random() > 0.5;
-	let words = [];
+const buildUpFanta = $sw => {
+	const word = randomArrKey(wordList);
 
-	[...$guys.querySelectorAll("x-guys-number")].forEach($el => {
-		$el.innerText = number;
-	});
-	$guys.querySelectorAll("x-guys-word").forEach($el => {
-		const w = pluralize(randomArrKey(wordList));
-		words.push(w);
-		$el.innerText = w;
-	});
+	$sw.querySelector("x-txt").innerText = word;
 
 	if (inverted) {
 		document.body.dataset.inverted = "true";
 	}
 
-	const tweet = [`${number} guys`.toUpperCase(), words.map(w => w.toUpperCase()).join(" and ")].join("\n");
+	const tweet = [`STAR WARS: ${word}`].join("\n");
 
-	return { number, words, tweet };
+	return { tweet };
 };
 
 const go = () => {
-	const $guys = document.querySelector("x-guys");
-	const data = buildUpFanta($guys, data);
+	const $sw = document.querySelector("body");
+	const data = buildUpFanta($sw, data);
 
 	console.log(JSON.stringify(data));
 };

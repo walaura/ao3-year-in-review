@@ -1,6 +1,6 @@
 @font-face {
-	font-family: "helv";
-	src: url("./font/helvetica.otf");
+	font-family: "itc";
+	src: url("./font/itc.otf");
 }
 @font-face {
 	font-family: "tk";
@@ -8,7 +8,9 @@
 }
 
 :root {
-	--red: #c92027;
+	--logo: #c92027;
+	--bg: #000;
+	--txt: #fff;
 }
 
 * {
@@ -17,9 +19,9 @@
 }
 
 body {
-	font-family: "tk";
-	color: var(--red);
-	background: #fff;
+	font-family: "itc";
+	background: var(--bg);
+	color: var(--txt);
 	width: 1280px;
 	height: 720px;
 	display: flex;
@@ -28,14 +30,10 @@ body {
 	position: absolute;
 	flex-direction: column;
 	box-sizing: border-box;
-	padding: 4em;
 	text-align: center;
 	-webkit-font-smoothing: antialiased;
-}
-
-body[data-inverted] {
-	color: #fff;
-	background: var(--red);
+	background-image: url(stars.png);
+	background-size: cover;
 }
 
 h1 {
@@ -66,4 +64,24 @@ h2 {
 
 h2 x-guys-word {
 	text-transform: uppercase;
+}
+
+x-txt {
+	text-transform: uppercase;
+	margin: 0.5em -3em 0.25em;
+	display: block;
+	font-size: 2.5em;
+	letter-spacing: 0.5em;
+	word-spacing: 0.25em;
+	line-height: 1;
+	padding-left: 0.25em;
+}
+
+x-wars {
+	display: block;
+	width: 50%;
+}
+x-wars svg {
+	width: 100%;
+	display: block;
 }

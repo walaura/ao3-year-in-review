@@ -8,12 +8,13 @@ const startServer = () =>
 	new Promise(rt => {
 		const bundler = new Bundler(__dirname + "/../code/index.html");
 		bundler.on("buildEnd", () => {
-			rt(`http://localhost:${config.ports.test}`);
+			rt(`http://google.com`);
 		});
 		bundler.serve(config.ports.test);
 	});
 
 const takeScreenshot = async url => {
+	console.log("started server");
 	const browser = await puppeteer.launch({
 		args: ["--no-sandbox"],
 		ignoreHTTPSErrors: true
@@ -24,7 +25,8 @@ const takeScreenshot = async url => {
 		page.on("console", async msg => {
 			try {
 				const log = JSON.parse(msg.text());
-				if (!log.number) {
+				console.log(log);
+				if (!log.tweet) {
 					throw new Error("invalid fanta");
 				}
 				await page.waitFor(1000); /* webfont */
@@ -35,7 +37,10 @@ const takeScreenshot = async url => {
 				nay([e, msg]);
 			}
 		});
-		Promise.all([page.setViewport({ width: 1280, height: 720 }), page.goto(url)]);
+		Promise.all([
+			page.setViewport({ width: 1280, height: 720 }),
+			page.goto(url)
+		]);
 	});
 };
 
