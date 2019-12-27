@@ -11,15 +11,34 @@ const get = async paginationKey => {
 		.then(res => res.text())
 		.then(res => cheerio.load(res));
 	const more = $(".load-more-data").data("key");
-	const headings = [];
+	const titles = [];
 
 	$("a.title").each(function() {
-		headings.push(
+		titles.push(
 			$(this)
 				.text()
 				.trim()
 		);
 	});
+
+	const maxTitleLength = Math.max(...titles.map(h => h.length)) * 1.5;
+
+	let sentences = [];
+	$("div.text").each(function() {
+		sentences = [
+			...sentences,
+			...$(this)
+				.text()
+				.split(".")
+				.map(s => s.trim())
+				.filter(s => s.length <= maxTitleLength)
+				.filter(Boolean)
+		];
+	});
+
+	const headings = [...titles, ...sentences];
+
+	console.log(`+${headings.length} soundbites`);
 
 	return { headings, more };
 };
@@ -29,6 +48,7 @@ const getALotOfThem = async () => {
 	let i = 0;
 	const savageGet = async paginationKey => {
 		i++;
+		console.log(`getting ${i}/${topFetch}`);
 		const { headings, more } = await get(paginationKey);
 		if (more && i < topFetch) {
 			const moreData = await savageGet(more);
@@ -43,14 +63,16 @@ const getALotOfThem = async () => {
 	return (await savageGet()).headings;
 };
 
+const cacheJsonAt = path.resolve(__dirname, "..", "dest", "cache.json");
+
 const main = async () => {
 	let currentHeadings = [];
 	try {
-		currentHeadings = require("./cache.json");
+		currentHeadings = require(cacheJsonAt);
 	} catch {}
 	const newHeadings = await getALotOfThem();
 	writeFileSync(
-		path.resolve(__dirname, "cache.json"),
+		cacheJsonAt,
 		JSON.stringify([...new Set([...currentHeadings, ...newHeadings])])
 	);
 };

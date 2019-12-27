@@ -85,3 +85,8 @@ x-wars svg {
 	width: 100%;
 	display: block;
 }
+
+x-wars svg path {
+	fill: var(--fill, transparent);
+	stroke: hsl(var(--hue, 51), 100%, 50%);
+}

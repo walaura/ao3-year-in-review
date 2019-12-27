@@ -6,26 +6,25 @@ const outPath = config.paths.screenie;
 
 const startServer = () =>
 	new Promise(rt => {
-		const bundler = new Bundler(__dirname + "/../code/index.html");
+		const bundler = new Bundler(__dirname + "/../../code/index.html");
 		bundler.on("buildEnd", () => {
-			rt(`http://google.com`);
+			rt(`http://localhost:1234/`);
 		});
 		bundler.serve(config.ports.test);
 	});
 
 const takeScreenshot = async url => {
-	console.log("started server");
 	const browser = await puppeteer.launch({
 		args: ["--no-sandbox"],
 		ignoreHTTPSErrors: true
 	});
+	console.log("launched puppetteer");
 	const page = await browser.newPage();
 
 	return new Promise((yay, nay) => {
 		page.on("console", async msg => {
 			try {
 				const log = JSON.parse(msg.text());
-				console.log(log);
 				if (!log.tweet) {
 					throw new Error("invalid fanta");
 				}
