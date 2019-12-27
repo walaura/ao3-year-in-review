@@ -1,4 +1,4 @@
-const config = require("../.fantarc");
+const config = require("../../.fantarc");
 const puppeteer = require("puppeteer");
 const Bundler = require("parcel-bundler");
 

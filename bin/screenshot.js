@@ -1,5 +1,5 @@
 require("dotenv").config();
 
-const getFanta = require("./make-screenshot");
+const takeScreenshot = require("./helper/take");
 
-getFanta();
+takeScreenshot();
