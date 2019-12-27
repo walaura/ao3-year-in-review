@@ -17,6 +17,7 @@
 	},
 	"devDependencies": {},
 	"scripts": {
+		"postinstall": "node ./bin/scrape.js",
 		"test": "jest",
 		"start": "parcel code/index.html",
 		"scrape": "node scrape/scrape.js"
