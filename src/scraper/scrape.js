@@ -1,6 +1,5 @@
 const fetch = require("node-fetch");
 const cheerio = require("cheerio");
-const path = require("path");
 const { URL } = require("url");
 const queuePromises = require("./queue");
 
@@ -65,7 +64,7 @@ const get = async ({ username, cookie }, paginationKey) => {
 				.text()
 		);
 
-		const $title = $(this).find("h4.heading a");
+		const $title = $(this).find("h4.heading a:first-of-type");
 
 		const titleWithWords = $title.text();
 		const author = $(this)
@@ -163,25 +162,24 @@ const getALotOfThem = async (cookie, max, callback = () => {}) => {
 		throw "Missing username";
 	}
 
-	callback(0.5);
+	callback(0.01);
 
 	/*get page count*/
 	const { pageCount, ...first } = await get({ cookie, username }, 1);
+	const length = Math.min(pageCount, max);
+	const indexes = Array.from({ length }, (v, k) => k + 1).splice(1);
 	let solved = 0;
-
-	const indexes = Array.from(
-		{ length: Math.min(pageCount, max) },
-		(v, k) => k + 1
-	).splice(1);
 	const pageArray = indexes.map(page => () =>
 		get({ cookie, username }, page).then(stuff => {
 			solved++;
-			callback(solved / pageCount);
+			callback(solved / length);
 			return stuff;
 		})
 	);
 
-	const pages = await queuePromises(10, pageArray);
+	callback(0.05);
+
+	const pages = await queuePromises(4, pageArray);
 
 	return [first, ...pages].reduce(mergeStuff);
 };

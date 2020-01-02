@@ -13,7 +13,7 @@ app.get("/ao3-stream", async (req, res) => {
 	res.setHeader("Transfer-Encoding", "chunked");
 	const { cookie } = req.query;
 
-	await getALotOfThem(cookie, 60, i => {
+	await getALotOfThem(cookie, 30, i => {
 		console.log(`getting ${i * 100}%`);
 		res.write(JSON.stringify([progress, i]));
 	})

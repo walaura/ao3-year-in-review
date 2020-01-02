@@ -48,7 +48,7 @@ const Panel = ({ title, info, children, theme = "default" }) => {
 		>
 			<header
 				css={css`
-					padding: 1.5em 4em 2em 1em;
+					padding: 1.5em 4em 0.5em 1em;
 					background: var(--panel-header-bg);
 					box-shadow: inset 0 0.5em 0 0 var(--panel-header-line);
 				`}
@@ -57,11 +57,11 @@ const Panel = ({ title, info, children, theme = "default" }) => {
 					css={css`
 						font-family: Georgia;
 						font-weight: 800;
-						font-size: 4em;
+						font-size: 3em;
 						letter-spacing: -0.025em;
-						line-height: 1;
+						line-height: 0.9;
 						margin-bottom: 0.25em;
-						transform: scaleX(0.95);
+						transform: scaleX(0.9);
 						transform-origin: 0 0;
 					`}
 				>
@@ -72,6 +72,7 @@ const Panel = ({ title, info, children, theme = "default" }) => {
 						font-family: monospace;
 						clear: both;
 						width: 75%;
+						margin: 1em 0;
 					`}
 				>
 					{info}
@@ -84,7 +85,6 @@ const Panel = ({ title, info, children, theme = "default" }) => {
 
 const Rating = ({ index, appearances, totalAppearances }) => (
 	<div
-		title={`${appearances} appearances`}
 		css={css`
 			width: 3em;
 			height: 3em;
@@ -95,15 +95,20 @@ const Rating = ({ index, appearances, totalAppearances }) => (
 			justify-content: center;
 			flex-direction: column;
 			z-index: 10;
+			transform: rotate(-10deg);
 		`}
 	>
-		<h3
+		<h3>{appearances}</h3>
+		<span
 			css={css`
-				transform: rotate(-10deg);
+				opacity: 0.5;
+				font-size: 0.5em;
+				line-height: 1;
+				margin-bottom: -0.25em;
 			`}
 		>
-			#{index}
-		</h3>
+			fics
+		</span>
 		<div
 			css={css`
 				width: 100%;
@@ -112,28 +117,43 @@ const Rating = ({ index, appearances, totalAppearances }) => (
 				position: absolute;
 				z-index: -1;
 				border-radius: 100%;
-				transform: scale(${0.5 + (appearances / totalAppearances) * 1});
+				transform: scale(${(appearances / totalAppearances) * 2});
 			`}
 		></div>
 	</div>
 );
 
-const Top12Panel = ({ list, ...props }) => {
-	const [slice, setSlice] = useState(6);
+const Top12Panel = ({ list, showCount, ...props }) => {
+	const [slice, setSlice] = useState(5);
+	const topFics = [];
+	for (const [key, item] of Object.entries(list)) {
+		if (key == 0) {
+			topFics.push(item);
+		} else if (
+			item.appearances / (topFics[key - 1] && topFics[key - 1].appearances) >
+			0.9
+		) {
+			topFics.push(item);
+		} else {
+			break;
+		}
+	}
 
 	return (
 		<Panel {...props}>
-			<ul>
-				{list.slice(0, slice).map((t, i) => (
+			<ol>
+				{topFics.map((t, i) => (
 					<li
 						css={css`
 							border-top: 1px solid var(--panel-line);
 							display: grid;
-							grid-template-columns: 3em 1fr 3em;
+							grid-template-rows: 1fr 1fr;
 							align-items: center;
-							gap: 2em;
-							padding: 0.5em 1em;
-							direction: ${(i + 1) % 2 === 0 ? "rtl" : "ltr"};
+							justify-content: center;
+							justify-items: center;
+							text-align: center;
+							gap: 1.5em;
+							padding: 3em 3em 1.5em;
 						`}
 					>
 						<Rating
@@ -141,16 +161,68 @@ const Top12Panel = ({ list, ...props }) => {
 							appearances={t.appearances}
 							totalAppearances={list[0].appearances}
 						/>
+
+						<h4
+							css={css`
+								font-size: 1.25em;
+							`}
+						>
+							<span>{t.title.replace(/\//gi, " / ")}</span>
+							{showCount && (
+								<span
+									css={css`
+										display: block;
+										font-family: monospace;
+										opacity: 0.75;
+										margin-top: 0.25em;
+										font-weight: 300;
+									`}
+								>
+									{showCount(t.appearances)}
+								</span>
+							)}
+						</h4>
+					</li>
+				))}
+				{list.slice(topFics.length, slice).map((t, i) => (
+					<li
+						css={css`
+							border-top: 1px solid var(--panel-line);
+							display: grid;
+							grid-template-columns: 1fr min-content;
+							align-items: center;
+							gap: 2em;
+							padding: 0.5em 1em;
+						`}
+					>
 						<h4
 							css={css`
 								direction: ltr;
 							`}
 						>
-							{t.title.replace(/\//gi, " / ")}
+							<span>{t.title.replace(/\//gi, " / ")}</span>
+							{showCount && (
+								<span
+									css={css`
+										display: block;
+										font-family: monospace;
+										opacity: 0.75;
+										margin-top: 0.25em;
+										font-weight: 300;
+									`}
+								>
+									{showCount(t.appearances)}
+								</span>
+							)}
 						</h4>
+						<Rating
+							index={i + 2}
+							appearances={t.appearances}
+							totalAppearances={list[0].appearances}
+						/>
 					</li>
 				))}
-			</ul>
+			</ol>
 			<button
 				onClick={() => {
 					setSlice(s => s + 6);
