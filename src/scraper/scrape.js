@@ -5,7 +5,7 @@ const { URL } = require("url");
 
 require("dotenv").config();
 
-const addOrCreate = (title, to, { extraFields = {}, weight = 1 } = {}) => {
+const addOrCreate = (title = "", to, { extraFields = {}, weight = 1 } = {}) => {
 	title = title.trim();
 	if (!to[title]) {
 		to[title] = {
@@ -150,16 +150,19 @@ const getALotOfThem = async (cookie, maxToFetch, callback = () => {}) => {
 	const savageGet = async paginationKey => {
 		i++;
 		callback(i);
-		const { next, ...stuff } = await get({ cookie, username }, paginationKey);
-		if (next && i < maxToFetch) {
-			const nextStuff = await savageGet(next);
+		const { next: nextPage , ...stuff } = await get(
+			{ cookie, username },
+			paginationKey
+		);
+		if (nextPage && i < maxToFetch) {
+			const { next, ...nextStuff } = await savageGet(nextPage);
 			return {
 				...mergeStuff(stuff, nextStuff),
-				...stuff
+				next
 			};
+		} else {
+			return stuff;
 		}
-
-		return { ...stuff, next };
 	};
 
 	return await savageGet();

@@ -12,8 +12,8 @@ app.get("/ao3-stream", async (req, res) => {
 	res.setHeader("Content-Type", "text/html; charset=utf-8");
 	res.setHeader("Transfer-Encoding", "chunked");
 	const { cookie } = req.query;
+	const maxToFetch = 20;
 
-	const maxToFetch = 40;
 	await getALotOfThem(cookie, maxToFetch, i => {
 		console.log(`getting ${i}/${maxToFetch}`);
 		res.write(JSON.stringify([progress, i / maxToFetch]));
