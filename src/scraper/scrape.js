@@ -27,6 +27,18 @@ const cookieCheerioFetch = (url, cookie) =>
 		.then(res => res.text())
 		.then(res => cheerio.load(res));
 
+const getWeight = (text = "") => {
+	const part = text
+		.trim()
+		.split(")")
+		.pop();
+
+	if (part.match(/\d+/)) {
+		return parseInt(part.match(/\d+/).pop());
+	}
+	return 1;
+};
+
 const get = async ({ username, cookie }, paginationKey) => {
 	const url = `https://archiveofourown.org/users/${username}/readings?nope&${
 		paginationKey ? `page=${paginationKey}` : "nu"
@@ -36,6 +48,8 @@ const get = async ({ username, cookie }, paginationKey) => {
 	let tags = {};
 	let fandoms = {};
 	let slashes = {};
+	let fics = {};
+	let authors = {};
 
 	$(".work").each(function() {
 		const slashList = (
@@ -44,8 +58,25 @@ const get = async ({ username, cookie }, paginationKey) => {
 				.attr("title") || ""
 		).split(",");
 
+		const weight = getWeight(
+			$(this)
+				.find(".viewed")
+				.text()
+		);
+
+		const $title = $(this).find("h4.heading a");
+
+		const titleWithWords = $title.text();
+		const author = $(this)
+			.find("h4.heading a[rel=author]")
+			.first()
+			.text();
+
+		addOrCreate($title.attr("href"), fics, { titleWithWords, author });
+		addOrCreate(author, authors, { weight });
+
 		slashList.map(slash => {
-			slashes = addOrCreate(slash, slashes);
+			slashes = addOrCreate(slash, slashes, { weight });
 		});
 
 		$(this)
@@ -55,7 +86,7 @@ const get = async ({ username, cookie }, paginationKey) => {
 					.text()
 					.trim();
 
-				addOrCreate(title, fandoms);
+				addOrCreate(title, fandoms, { weight });
 			});
 
 		$(this)
@@ -70,7 +101,7 @@ const get = async ({ username, cookie }, paginationKey) => {
 					.attr("class");
 
 				if (type) {
-					addOrCreate(title, tags, { extraFields: { type } });
+					addOrCreate(title, tags, { extraFields: { type }, weight });
 				}
 			});
 	});
@@ -81,7 +112,7 @@ const get = async ({ username, cookie }, paginationKey) => {
 		next = new URL("https://example.com" + nextLink).searchParams.get("page");
 	}
 
-	return { tags, fandoms, slashes, next };
+	return { tags, fandoms, slashes, fics, authors, next };
 };
 
 const mergeStuff = (prev, next) => {
@@ -98,6 +129,7 @@ const mergeStuff = (prev, next) => {
 };
 
 const getALotOfThem = async (cookie, maxToFetch, callback = () => {}) => {
+	callback(0);
 	/* gotta get the username first lol */
 	const $ = await cookieCheerioFetch(
 		"https://archiveofourown.org/menu/browse",
@@ -111,6 +143,8 @@ const getALotOfThem = async (cookie, maxToFetch, callback = () => {}) => {
 	if (!username) {
 		throw "Missing username";
 	}
+
+	callback(0.5);
 
 	let i = 0;
 	const savageGet = async paginationKey => {

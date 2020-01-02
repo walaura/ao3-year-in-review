@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-
+import Panel, { Top12Panel } from "./panel/panel";
+import List from "./list/list";
+import Styles from "./styles";
 import { preflight, progress, error } from "../shared/const";
 
 const useLocalStorage = key => {
@@ -79,40 +81,90 @@ const Retriever = ({ onNewData }) => {
 	);
 };
 
+const AllData = ({ data, onReset }) => {
+	const topTags = Object.values(data.tags)
+		.filter(({ type }) => type === "freeforms")
+		.sort((a, b) => b.appearances - a.appearances);
+
+	const topShips = Object.values(data.tags)
+		.filter(({ type }) => type === "relationships")
+		.filter(({ title }) => title.includes("/"))
+		.sort((a, b) => b.appearances - a.appearances);
+
+	const topPlatonicShips = Object.values(data.tags)
+		.filter(({ type }) => type === "relationships")
+		.filter(({ title }) => !title.includes("/"))
+		.sort((a, b) => b.appearances - a.appearances);
+
+	return (
+		<>
+			<List>
+				<Top12Panel
+					title={"Top tags"}
+					emojos={["🔖", "🕵️‍♀️"]}
+					list={topTags}
+					info={
+						"These are the most common freeform tags in the fics youve read"
+					}
+				/>
+				<Top12Panel
+					title={"Slash ships"}
+					emojos={["🔖", "🕵️‍♀️"]}
+					list={topShips}
+					info={"When they do the kissy kissy"}
+				/>
+				<Top12Panel
+					title={"Platonic ships"}
+					emojos={["🔖", "🕵️‍♀️"]}
+					list={topPlatonicShips}
+					info={"When they dont do it"}
+				/>
+			</List>
+			<fieldset>
+				<h2>Manage local data</h2>
+				<button onClick={onReset}>Delete</button>
+			</fieldset>
+			<fieldset>
+				<pre>{JSON.stringify(data, null, 2)}</pre>{" "}
+			</fieldset>
+		</>
+	);
+};
+
 const App = () => {
 	const [data, setData] = useLocalStorage("my-data");
+
+	if (data && data.fics) {
+		return (
+			<>
+				<Styles />
+				<AllData
+					data={data}
+					onReset={() => {
+						setData({});
+					}}
+				/>
+			</>
+		);
+	}
+
 	return (
 		<div>
 			<fieldset>
-				<p>
-					<h2>help???</h2>
-					<ol>
-						<li>
-							Paste your{" "}
-							<a href="https://imgur.com/a/EL9eDI1">_otwarchive_session</a>
-							cookie in the cookie input field right under
-						</li>
-						<li>Hit "load stuffs"</li>
-					</ol>
-				</p>
+				<h2>help???</h2>
+				<ol>
+					<li>
+						Paste your{" "}
+						<a href="https://imgur.com/a/EL9eDI1">_otwarchive_session</a> cookie
+						in the cookie input field right under
+					</li>
+					<li>Hit "load stuffs"</li>
+				</ol>
 			</fieldset>
 			<fieldset>
 				<h2>Login</h2>
 				<Retriever onNewData={setData}></Retriever>
 			</fieldset>
-			<fieldset>
-				<h2>Manage local data</h2>
-				<button
-					onClick={() => {
-						setData({});
-					}}
-				>
-					Delete
-				</button>
-			</fieldset>
-
-			<hr />
-			<pre>{JSON.stringify(data, null, 2)}</pre>
 		</div>
 	);
 };
