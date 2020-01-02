@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 const cheerio = require("cheerio");
 const path = require("path");
 const { URL } = require("url");
+const queuePromises = require("./queue");
 
 require("dotenv").config();
 
@@ -109,30 +110,45 @@ const get = async ({ username, cookie }, paginationKey) => {
 			});
 	});
 
-	let next;
-	const nextLink = $(".next a").attr("href");
-	if (nextLink) {
-		next = new URL("https://example.com" + nextLink).searchParams.get("page");
+	let pageCount = -1;
+	try {
+		const lastPageHref = $(".pagination .next")
+			.prev()
+			.find("a")
+			.attr("href");
+		pageCount = new URL("https://example.com" + lastPageHref).searchParams.get(
+			"page"
+		);
+		console.log(pageCount);
+	} catch (e) {
+		console.error(e);
 	}
 
-	return { tags, fandoms, slashes, fics, authors, next };
+	return { tags, fandoms, slashes, fics, authors, pageCount };
 };
 
 const mergeStuff = (prev, next) => {
 	for (const [outerKey, outerVal] of Object.entries(prev)) {
-		for (const [key, val] of Object.entries(outerVal)) {
-			if (next[outerKey][key]) {
-				next[outerKey][key].appearances += val.appearances;
-			} else {
-				next[outerKey][key] = val;
+		try {
+			for (const [key, val] of Object.entries(outerVal)) {
+				if (next[outerKey]) {
+					if (next[outerKey][key]) {
+						next[outerKey][key].appearances += val.appearances;
+					} else {
+						next[outerKey][key] = val;
+					}
+				}
 			}
+		} catch (e) {
+			console.error(e);
 		}
 	}
 	return next;
 };
 
-const getALotOfThem = async (cookie, maxToFetch, callback = () => {}) => {
+const getALotOfThem = async (cookie, max, callback = () => {}) => {
 	callback(0);
+
 	/* gotta get the username first lol */
 	const $ = await cookieCheerioFetch(
 		"https://archiveofourown.org/menu/browse",
@@ -149,26 +165,25 @@ const getALotOfThem = async (cookie, maxToFetch, callback = () => {}) => {
 
 	callback(0.5);
 
-	let i = 0;
-	const savageGet = async paginationKey => {
-		i++;
-		callback(i);
-		const { next: nextPage, ...stuff } = await get(
-			{ cookie, username },
-			paginationKey
-		);
-		if (nextPage && i < maxToFetch) {
-			const { next, ...nextStuff } = await savageGet(nextPage);
-			return {
-				...mergeStuff(stuff, nextStuff),
-				next
-			};
-		} else {
-			return stuff;
-		}
-	};
+	/*get page count*/
+	const { pageCount, ...first } = await get({ cookie, username }, 1);
+	let solved = 0;
 
-	return await savageGet();
+	const indexes = Array.from(
+		{ length: Math.min(pageCount, max) },
+		(v, k) => k + 1
+	).splice(1);
+	const pageArray = indexes.map(page => () =>
+		get({ cookie, username }, page).then(stuff => {
+			solved++;
+			callback(solved / pageCount);
+			return stuff;
+		})
+	);
+
+	const pages = await queuePromises(10, pageArray);
+
+	return [first, ...pages].reduce(mergeStuff);
 };
 
 module.exports = getALotOfThem;

@@ -12,11 +12,10 @@ app.get("/ao3-stream", async (req, res) => {
 	res.setHeader("Content-Type", "text/html; charset=utf-8");
 	res.setHeader("Transfer-Encoding", "chunked");
 	const { cookie } = req.query;
-	const maxToFetch = 20;
 
-	await getALotOfThem(cookie, maxToFetch, i => {
-		console.log(`getting ${i}/${maxToFetch}`);
-		res.write(JSON.stringify([progress, i / maxToFetch]));
+	await getALotOfThem(cookie, 60, i => {
+		console.log(`getting ${i * 100}%`);
+		res.write(JSON.stringify([progress, i]));
 	})
 		.then(gayShit => {
 			res.write(JSON.stringify([preflight, gayShit]));
