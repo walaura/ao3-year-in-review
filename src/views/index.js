@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
 
-import { preflight, progress } from "../shared/const";
+import { preflight, progress, error } from "../shared/const";
 
 const useLocalStorage = key => {
 	const [storedValue, setStoredValue] = useState(() => {
@@ -31,6 +31,9 @@ const onData = async (stream, callback = () => {}) => {
 		callback(jsonValue);
 	}
 
+	if (type === error) {
+		throw jsonValue;
+	}
 	if (type === preflight) {
 		return jsonValue;
 	} else if (!done) {
@@ -49,23 +52,30 @@ const Retriever = ({ onNewData }) => {
 	const [progress, setProgress] = useState(1);
 	const [cookie, setCookie] = useLocalStorage("ao3-cookie");
 	return (
-		<div style={{ display: "flex" }}>
+		<form
+			onSubmit={ev => {
+				ev.preventDefault();
+				setProgress(0);
+				fetchData(cookie.val, setProgress)
+					.then(onNewData)
+					.catch(err => {
+						alert(err);
+						setProgress(1);
+					});
+			}}
+			style={{ display: "flex" }}
+		>
 			<input
+				style={{ flex: "1 1 0" }}
 				placeholder="your ao3 cookie"
 				value={cookie.val}
 				onChange={ev => setCookie({ val: ev.target.value })}
 			></input>
-			<button
-				disabled={progress !== 1}
-				onClick={async () => {
-					setProgress(0);
-					onNewData(await fetchData(cookie.val, setProgress));
-				}}
-			>
+			<button type="submit" disabled={progress !== 1}>
 				load stuffs
 			</button>
 			{progress !== 1 && <div>{progress * 100}%</div>}
-		</div>
+		</form>
 	);
 };
 
@@ -74,10 +84,24 @@ const App = () => {
 	return (
 		<div>
 			<fieldset>
+				<p>
+					<h2>help???</h2>
+					<ol>
+						<li>
+							Paste your{" "}
+							<a href="https://imgur.com/a/EL9eDI1">_otwarchive_session</a>
+							cookie in the cookie input field right under
+						</li>
+						<li>Hit "load stuffs"</li>
+					</ol>
+				</p>
+			</fieldset>
+			<fieldset>
+				<h2>Login</h2>
 				<Retriever onNewData={setData}></Retriever>
 			</fieldset>
-			<hr />
 			<fieldset>
+				<h2>Manage local data</h2>
 				<button
 					onClick={() => {
 						setData({});
@@ -88,7 +112,7 @@ const App = () => {
 			</fieldset>
 
 			<hr />
-			<pre>{JSON.stringify(data)}</pre>
+			<pre>{JSON.stringify(data, null, 2)}</pre>
 		</div>
 	);
 };

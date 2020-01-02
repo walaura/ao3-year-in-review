@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const Bundler = require("parcel-bundler");
 
-const { preflight, progress } = require("./shared/const.js");
+const { preflight, progress, fail } = require("./shared/const.js");
 const app = express();
 const getALotOfThem = require("./scraper/scrape");
 const port = process.env.PORT || 3000;
@@ -14,12 +14,19 @@ app.get("/ao3-stream", async (req, res) => {
 	const { cookie } = req.query;
 
 	const maxToFetch = 2;
-	const gayShit = await getALotOfThem(cookie, maxToFetch, i => {
+	await getALotOfThem(cookie, maxToFetch, i => {
 		console.log(`getting ${i}/${maxToFetch}`);
 		res.write(JSON.stringify([progress, i / maxToFetch]));
-	});
-	res.write(JSON.stringify([preflight, gayShit]));
-	res.end();
+	})
+		.then(gayShit => {
+			res.write(JSON.stringify([preflight, gayShit]));
+			res.end();
+		})
+		.catch(err => {
+			res.write(JSON.stringify([fail, err]));
+			res.end();
+			return;
+		});
 });
 
 app.use(bundler.middleware());
