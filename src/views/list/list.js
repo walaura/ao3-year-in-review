@@ -5,24 +5,39 @@ const List = ({ children }) => {
 	return (
 		<div
 			css={css`
-				--width: 12em;
+				width: 100vw;
+				height: 100vh;
 				background: #222;
-				display: grid;
 				overflow: scroll;
-				padding: 10vh calc(50vw - var(--width));
-				gap: 2em;
-				grid-auto-columns: calc(var(--width) * 2);
-				grid-auto-flow: column;
-				grid-template-rows: 80vh;
-
-				& > * {
-					box-shadow: 0 1px 1em 0 #111;
-					background: #fff;
-					overflow: scroll;
-				}
+				display: flex;
+				align-items: center;
+				justify-content: flex-start;
+				scroll-snap-type: x mandatory;
 			`}
 		>
-			{children}
+			<div>
+				<div
+					css={css`
+						--width: 12em;
+						display: grid;
+						gap: 2em;
+						margin: 0 calc(50vw - var(--width));
+						grid-auto-columns: calc(var(--width) * 2);
+						grid-auto-flow: column;
+						grid-template-rows: 80vh;
+						width: intrinsic;
+
+						& > * {
+							box-shadow: 0 1px 1em 0 #111;
+							background: #fff;
+							overflow: scroll;
+							scroll-snap-align: center;
+						}
+					`}
+				>
+					{children}
+				</div>
+			</div>
 		</div>
 	);
 };

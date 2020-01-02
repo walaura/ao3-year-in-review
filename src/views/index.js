@@ -3,7 +3,7 @@ import ReactDOM from "react-dom";
 import Panel, { Top12Panel } from "./panel/panel";
 import List from "./list/list";
 import Styles from "./styles";
-import { preflight, progress, error } from "../shared/const";
+import { preflight, progress, fail } from "../shared/const";
 
 const useLocalStorage = key => {
 	const [storedValue, setStoredValue] = useState(() => {
@@ -24,21 +24,32 @@ const useLocalStorage = key => {
 	];
 };
 
+let previousPartialValue = "";
 const onData = async (stream, callback = () => {}) => {
 	const { value, done } = await stream.read();
-	const [type, jsonValue] = JSON.parse(new TextDecoder("utf-8").decode(value));
+	const parsedValue = new TextDecoder("utf-8").decode(value);
+
+	if (parsedValue.charAt(parsedValue.length - 1) !== "]") {
+		previousPartialValue += parsedValue;
+		return onData(stream, callback);
+	}
+
+	const [type, jsonValue] = JSON.parse(previousPartialValue + parsedValue);
+
+	previousPartialValue = "";
 	console.log("data");
 	console.log([done, jsonValue]);
+
 	if (type === progress) {
 		callback(jsonValue);
 	}
-
-	if (type === error) {
+	if (type === fail) {
 		throw jsonValue;
 	}
 	if (type === preflight) {
 		return jsonValue;
-	} else if (!done) {
+	}
+	if (!done) {
 		return onData(stream, callback);
 	}
 };
@@ -47,7 +58,9 @@ const fetchData = async (cookie, callback = () => {}) => {
 	const stream = await fetch(`/ao3-stream?cookie=${cookie}`).then(response =>
 		response.body.getReader()
 	);
-	return onData(stream, callback);
+	const data = await onData(stream, callback);
+	stream.cancel();
+	return data;
 };
 
 const Retriever = ({ onNewData }) => {
@@ -61,6 +74,7 @@ const Retriever = ({ onNewData }) => {
 				fetchData(cookie.val, setProgress)
 					.then(onNewData)
 					.catch(err => {
+						console.error(err);
 						alert(err);
 						setProgress(1);
 					});
@@ -96,11 +110,28 @@ const AllData = ({ data, onReset }) => {
 		.filter(({ title }) => !title.includes("/"))
 		.sort((a, b) => b.appearances - a.appearances);
 
+	const topFandoms = Object.values(data.fandoms).sort(
+		(a, b) => b.appearances - a.appearances
+	);
+
+	const topFics = Object.values(data.fics)
+		.sort((a, b) => b.appearances - a.appearances)
+		.map(fic => ({ ...fic, href: fic.title, title: "a" + fic.titleWithWords }));
+
 	return (
 		<>
 			<List>
 				<Top12Panel
-					title={"Top tags"}
+					title={"Fandoms"}
+					theme="dark"
+					emojos={["🔖", "🕵️‍♀️"]}
+					list={topFandoms}
+					info={
+						"These are the most common freeform tags in the fics youve read"
+					}
+				/>
+				<Top12Panel
+					title={"Tags"}
 					emojos={["🔖", "🕵️‍♀️"]}
 					list={topTags}
 					info={
@@ -108,16 +139,24 @@ const AllData = ({ data, onReset }) => {
 					}
 				/>
 				<Top12Panel
-					title={"Slash ships"}
+					title={"Ships (slash)"}
 					emojos={["🔖", "🕵️‍♀️"]}
 					list={topShips}
+					theme="red"
 					info={"When they do the kissy kissy"}
 				/>
 				<Top12Panel
-					title={"Platonic ships"}
+					title={"Ships (platonic)"}
 					emojos={["🔖", "🕵️‍♀️"]}
 					list={topPlatonicShips}
+					theme="red"
 					info={"When they dont do it"}
+				/>
+
+				<Top12Panel
+					title={"Fics you kept coming back to"}
+					emojos={["🔖", "🕵️‍♀️"]}
+					list={topFics}
 				/>
 			</List>
 			<fieldset>

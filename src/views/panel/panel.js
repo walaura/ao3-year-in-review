@@ -2,19 +2,55 @@
 import { css, jsx } from "@emotion/core";
 import { useState } from "react";
 
+const themes = {
+	default: css`
+		--panel-color: var(--text);
+		--panel-bg: #fff;
+		--panel-header-bg: rgb(221, 221, 221);
+		--panel-header-line: var(--brand);
+		--panel-line: var(--border);
+
+		--panel-rating: var(--brand);
+		--panel-rating-color: #fff;
+	`,
+	red: css`
+		--panel-color: #fff;
+		--panel-bg: var(--brand);
+		--panel-header-bg: rgba(0, 0, 0, 0.1);
+		--panel-header-line: rgba(0, 0, 0, 0.1);
+		--panel-line: rgba(0, 0, 0, 0.25);
+		--panel-rating: #fff;
+		--panel-rating-color: var(--brand);
+	`,
+	dark: css`
+		--panel-color: #fff;
+		--panel-bg: #111;
+		--panel-header-bg: #111;
+		--panel-header-line: #000;
+		--panel-line: #000;
+		--panel-rating: var(--brand);
+		--panel-rating-color: #fff;
+	`
+};
+
 const Panel = ({ title, info, children, theme = "default" }) => {
 	return (
 		<section
-			css={css`
-				width: 100%;
-				overflow-x: hidden;
-			`}
+			css={[
+				css`
+					width: 100%;
+					overflow-x: hidden;
+					color: var(--panel-color);
+					background: var(--panel-bg);
+				`,
+				themes[theme]
+			]}
 		>
 			<header
 				css={css`
 					padding: 1.5em 4em 2em 1em;
-					background: rgb(221, 221, 221);
-					box-shadow: inset 0 1em 0 0 var(--brand);
+					background: var(--panel-header-bg);
+					box-shadow: inset 0 0.5em 0 0 var(--panel-header-line);
 				`}
 			>
 				<h2
@@ -46,13 +82,13 @@ const Panel = ({ title, info, children, theme = "default" }) => {
 	);
 };
 
-const Value = ({ index, appearances, totalAppearances }) => (
+const Rating = ({ index, appearances, totalAppearances }) => (
 	<div
 		title={`${appearances} appearances`}
 		css={css`
 			width: 3em;
 			height: 3em;
-			color: #fff;
+			color: var(--panel-rating-color);
 			display: flex;
 			position: relative;
 			align-items: center;
@@ -72,7 +108,7 @@ const Value = ({ index, appearances, totalAppearances }) => (
 			css={css`
 				width: 100%;
 				height: 100%;
-				background: var(--brand);
+				background: var(--panel-rating);
 				position: absolute;
 				z-index: -1;
 				border-radius: 100%;
@@ -91,7 +127,7 @@ const Top12Panel = ({ list, ...props }) => {
 				{list.slice(0, slice).map((t, i) => (
 					<li
 						css={css`
-							border-top: 1px solid var(--border);
+							border-top: 1px solid var(--panel-line);
 							display: grid;
 							grid-template-columns: 3em 1fr 3em;
 							align-items: center;
@@ -100,7 +136,7 @@ const Top12Panel = ({ list, ...props }) => {
 							direction: ${(i + 1) % 2 === 0 ? "rtl" : "ltr"};
 						`}
 					>
-						<Value
+						<Rating
 							index={i + 1}
 							appearances={t.appearances}
 							totalAppearances={list[0].appearances}

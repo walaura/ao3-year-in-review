@@ -72,7 +72,10 @@ const get = async ({ username, cookie }, paginationKey) => {
 			.first()
 			.text();
 
-		addOrCreate($title.attr("href"), fics, { titleWithWords, author });
+		addOrCreate($title.attr("href"), fics, {
+			extraFields: { titleWithWords, author },
+			weight
+		});
 		addOrCreate(author, authors, { weight });
 
 		slashList.map(slash => {
@@ -150,7 +153,7 @@ const getALotOfThem = async (cookie, maxToFetch, callback = () => {}) => {
 	const savageGet = async paginationKey => {
 		i++;
 		callback(i);
-		const { next: nextPage , ...stuff } = await get(
+		const { next: nextPage, ...stuff } = await get(
 			{ cookie, username },
 			paginationKey
 		);
