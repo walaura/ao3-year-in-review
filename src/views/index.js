@@ -1,99 +1,11 @@
 import React, { useState } from "react";
 import ReactDOM from "react-dom";
-import Panel, { Top12Panel } from "./panel/panel";
 import List from "./list/list";
+import { Top12Panel } from "./panel/panel";
+import Retriever from "./retriever/retriever";
 import Styles from "./styles";
-import { preflight, progress, fail } from "../shared/const";
-
-const useLocalStorage = key => {
-	const [storedValue, setStoredValue] = useState(() => {
-		try {
-			const item = window.localStorage.getItem(key);
-			return item ? JSON.parse(item) : {};
-		} catch (error) {
-			return {};
-		}
-	});
-
-	return [
-		storedValue,
-		value => {
-			window.localStorage.setItem(key, JSON.stringify(value));
-			setStoredValue(value);
-		}
-	];
-};
-
-let previousPartialValue = "";
-const onData = async (stream, callback = () => {}) => {
-	const { value, done } = await stream.read();
-	const parsedValue = new TextDecoder("utf-8").decode(value);
-
-	if (parsedValue.charAt(parsedValue.length - 1) !== "]") {
-		previousPartialValue += parsedValue;
-		return onData(stream, callback);
-	}
-
-	const [type, jsonValue] = JSON.parse(previousPartialValue + parsedValue);
-
-	previousPartialValue = "";
-	console.log("data");
-	console.log([done, jsonValue]);
-
-	if (type === progress) {
-		callback(jsonValue);
-	}
-	if (type === fail) {
-		throw jsonValue;
-	}
-	if (type === preflight) {
-		return jsonValue;
-	}
-	if (!done) {
-		return onData(stream, callback);
-	}
-};
-
-const fetchData = async (cookie, callback = () => {}) => {
-	const stream = await fetch(`/ao3-stream?cookie=${cookie}`).then(response =>
-		response.body.getReader()
-	);
-	const data = await onData(stream, callback);
-	stream.cancel();
-	return data;
-};
-
-const Retriever = ({ onNewData }) => {
-	const [progress, setProgress] = useState(1);
-	const [cookie, setCookie] = useLocalStorage("ao3-cookie");
-	return (
-		<form
-			onSubmit={ev => {
-				ev.preventDefault();
-				setProgress(0);
-				fetchData(cookie.val, setProgress)
-					.then(onNewData)
-					.catch(err => {
-						console.error(err);
-						alert(err);
-						setProgress(1);
-					});
-			}}
-			style={{ display: "flex" }}
-		>
-			<input
-				style={{ flex: "1 1 0" }}
-				placeholder="your ao3 cookie"
-				value={cookie.val}
-				onChange={ev => setCookie({ val: ev.target.value })}
-			></input>
-			<button type="submit" disabled={progress !== 1}>
-				load stuffs
-			</button>
-			{progress !== 1 && <div>{progress * 100}%</div>}
-		</form>
-	);
-};
+import SignIn from "./views/sign-in";
+import useLocalStorage from "./helper/use-local-storage";
 
 const AllData = ({ data, onReset }) => {
 	const topTags = Object.values(data.tags)
@@ -159,52 +71,49 @@ const AllData = ({ data, onReset }) => {
 					list={topFics}
 				/>
 			</List>
-			<fieldset>
-				<h2>Manage local data</h2>
-				<button onClick={onReset}>Delete</button>
-			</fieldset>
-			<fieldset>
-				<pre>{JSON.stringify(data, null, 2)}</pre>{" "}
-			</fieldset>
+			<details>
+				<summary>Hacker mode</summary>{" "}
+				<fieldset>
+					<h2>Manage local data</h2>
+					<button onClick={onReset}>Delete</button>
+				</fieldset>
+				<fieldset>
+					<pre>{JSON.stringify(data, null, 2)}</pre>{" "}
+				</fieldset>
+			</details>
 		</>
 	);
 };
 
-const App = () => {
+const Router = () => {
 	const [data, setData] = useLocalStorage("my-data");
-
 	if (data && data.fics) {
 		return (
-			<>
-				<Styles />
-				<AllData
-					data={data}
-					onReset={() => {
-						setData({});
-					}}
-				/>
-			</>
+			<AllData
+				data={data}
+				onReset={() => {
+					setData({});
+				}}
+			/>
+		);
+	} else {
+		return (
+			<SignIn>
+				<fieldset>
+					<h2>Login</h2>
+					<Retriever onNewData={setData}></Retriever>
+				</fieldset>
+			</SignIn>
 		);
 	}
+};
 
+const App = () => {
 	return (
-		<div>
-			<fieldset>
-				<h2>help???</h2>
-				<ol>
-					<li>
-						Paste your{" "}
-						<a href="https://imgur.com/a/EL9eDI1">_otwarchive_session</a> cookie
-						in the cookie input field right under
-					</li>
-					<li>Hit "load stuffs"</li>
-				</ol>
-			</fieldset>
-			<fieldset>
-				<h2>Login</h2>
-				<Retriever onNewData={setData}></Retriever>
-			</fieldset>
-		</div>
+		<>
+			<Styles />
+			<Router />
+		</>
 	);
 };
 
