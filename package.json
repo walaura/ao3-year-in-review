@@ -3,7 +3,9 @@
 	"version": "1.0.0",
 	"description": "",
 	"main": "app.js",
-	"browserslist": ["Chrome 78"],
+	"browserslist": [
+		"Chrome 78"
+	],
 	"dependencies": {
 		"chalk": "^2.4.1",
 		"cheerio": "^1.0.0-rc.3",
@@ -24,10 +26,7 @@
 		"babel-plugin-transform-runtime": "^6.23.0"
 	},
 	"scripts": {
-		"postinstall": "npm run scrape",
-		"test": "jest",
-		"start": "parcel code/index.html",
-		"scrape": "node ./bin/scrape.js"
+		"start": "node ./src/index.js",
 	},
 	"repository": {
 		"type": "git",
